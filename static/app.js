@@ -1,16 +1,8 @@
-// =================================================================
-// Global Variables for Caching and Playback State
-// =================================================================
-
 let allTrackMetadata = [];
 const audioPlayer = document.getElementById('audioPlayer');
 
 let currentMixSequence = [];
 let currentTrackIndex = 0;
-
-// =================================================================
-// Core Utility Functions
-// =================================================================
 
 async function fetchAllTracks() {
     try {
@@ -27,10 +19,6 @@ async function fetchAllTracks() {
 function getTrackDetailsById(id) {
     return allTrackMetadata.find(track => track.id === id);
 }
-
-// =================================================================
-// Playback Functions (Sequential Logic)
-// =================================================================
 
 function startSequentialPlayback(tracks) {
     const statusDiv = document.getElementById('mixStatus');
@@ -55,7 +43,7 @@ function playNextTrackInSequence() {
     const statusDiv = document.getElementById('mixStatus');
 
     if (currentTrackIndex >= currentMixSequence.length) {
-        statusDiv.innerText = '✅ Playlist finished.';
+        statusDiv.innerText = 'Playlist finished.';
         audioPlayer.src = '';
         return;
     }
@@ -63,20 +51,20 @@ function playNextTrackInSequence() {
     const track = currentMixSequence[currentTrackIndex];
 
     statusDiv.innerHTML =
-        `🎶 Now Playing: <b>${track.title || track.name}</b> (${currentTrackIndex + 1} of ${currentMixSequence.length})`;
+        `Playing: <b>${track.title || track.name}</b> (${currentTrackIndex + 1} of ${currentMixSequence.length})`;
 
-    audioPlayer.src = track.file_path;
+    // Extract the filename from the full path (handles both Windows '\' and Linux '/')
+    const filename = track.file_path.split(/[/\\]/).pop();
+
+    // Construct the URL using the static mount point "/tracks/"
+    audioPlayer.src = `/tracks/${filename}`;
 
     audioPlayer.play().catch(e => {
         console.error("Autoplay prevented:", e);
-        statusDiv.innerText = `⚠️ Click Play! Browser blocked autoplay for track ${currentTrackIndex + 1}.`;
+        statusDiv.innerText = `Click Play! Browser blocked autoplay for track ${currentTrackIndex + 1}.`;
     });
 }
 
-
-// =================================================================
-// 1. Upload Function
-// =================================================================
 
 async function uploadFiles() {
     const input = document.getElementById('musicFile');
@@ -109,18 +97,14 @@ async function uploadFiles() {
             } else {
                 const errorText = await response.json();
                 console.error("Upload Failed:", errorText);
-                uploadStatus.innerText = `❌ Upload failed: ${errorText.detail || "Server Error"}`;
+                uploadStatus.innerText = ` Upload failed: ${errorText.detail || "Server Error"}`;
             }
         } catch (error) {
             console.error("Upload Network Error:", error);
-            uploadStatus.innerText += ` ❌ Network error`;
+            uploadStatus.innerText += ` Network error`;
         }
     }
 }
-
-// =================================================================
-// 2. Mix Generation Function
-// =================================================================
 
 async function generateMix() {
     const promptfield = document.getElementById('moodPrompt');
@@ -150,7 +134,7 @@ async function generateMix() {
         const data = await response.json();
 
         if (response.ok) {
-            statusDiv.innerText = "✅ Mix generated successfully!";
+            statusDiv.innerText = " Mix generated successfully!";
 
             const playlistResponse = data;
 
@@ -191,20 +175,16 @@ async function generateMix() {
             }
 
         } else {
-            statusDiv.innerText = "❌ Mix generation failed.";
+            statusDiv.innerText = " Mix generation failed.";
             listContainer.innerHTML = `<p style="color: red;">Error: ${data.detail || "Server failed to generate mix."}</p>`;
             console.error("Backend Error:", data.detail || data);
         }
     }
     catch (error) {
-        statusDiv.innerText = "❌ Network error connecting to server.";
+        statusDiv.innerText = " Network error connecting to server.";
         console.error("Network error:", error);
     }
 }
-
-// =================================================================
-// 3. Top Tracks Function
-// =================================================================
 
 async function getTopTracks() {
     const topTracksList = document.getElementById('topTracksList');
@@ -244,9 +224,5 @@ async function getTopTracks() {
         topTracksList.innerHTML = `<li>Network or fetching error.</li>`;
     }
 }
-
-// =================================================================
-// Initial Load: Populate Metadata Cache
-// =================================================================
 
 fetchAllTracks();
