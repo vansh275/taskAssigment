@@ -5,7 +5,7 @@ TOP_TRACKS="TOP_TRACKS"
 TOP_TRACKS_TTL=3600
 
 ALL_TRACKS="ALL_TRACKS"
-ALL_TRACKS_TTL=86400
+ALL_TRACKS_TTL=3600
 
 def get_all_cache():
     return IN_MEMORY_CACHE
@@ -22,7 +22,6 @@ def is_track_present():
 
 
 def update_cache(key:str,track,data,ttl):
-    
     if key == ALL_TRACKS:
         if key in IN_MEMORY_CACHE:
             IN_MEMORY_CACHE[key]['data'].append(track)
@@ -36,7 +35,6 @@ def update_cache(key:str,track,data,ttl):
             'data':data,
             'expiry':datetime.now()+timedelta(seconds=ttl)
         }
-    # return {}
 
 def get_cache(key:str):
     if key in IN_MEMORY_CACHE:
@@ -54,6 +52,7 @@ def add_track_to_all(track):
 
 def set_all_tracks(data):
     return update_cache(ALL_TRACKS,None,data,ALL_TRACKS_TTL)
+
 
 def get_top_tracks():
     return get_cache(TOP_TRACKS)

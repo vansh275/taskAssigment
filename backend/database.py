@@ -1,7 +1,6 @@
 from sqlalchemy import create_engine,Column,String,Integer,DateTime,Text,func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
 import json
 
 engine=create_engine("sqlite:///site.db", connect_args={"check_same_thread": False})
@@ -13,7 +12,7 @@ class Track(Base):
     __tablename__="tracks"
     id=Column(Integer,primary_key=True)
     name=Column(String,nullable=False)
-    used=Column(Integer,nullable=False)
+    mix_count=Column(Integer,nullable=False)
     genre=Column(String,nullable=False)
     file_path = Column(String, nullable=False)
 
@@ -21,14 +20,14 @@ class Track(Base):
         return{
             "id":self.id,
             "name":self.name,
-            # "used":self.used,
+            "mix_count":self.mix_count,
             "file_path": self.file_path,
             "genre":self.genre
         }
     def get_used(self):
         return{
             "name":self.name,
-            "used":self.used
+            "mix_count":self.mix_count
         }
     
 class Playlist(Base):

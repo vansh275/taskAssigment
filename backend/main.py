@@ -40,7 +40,7 @@ def save_track_to_db(tag:dict,db:session):
     if existing_track:
         return {"status":"updated","id":existing_track.id}
     else:
-        newTrack=Track(name=tag.get("title"),used=1,genre=tag.get("genre"),file_path=tag.get("file_path"))
+        newTrack=Track(name=tag.get("title"),mix_count=1,genre=tag.get("genre"),file_path=tag.get("file_path"))
         db.add(newTrack)
         db.commit()
         db.refresh(newTrack)
@@ -52,9 +52,9 @@ def save_track_to_db(tag:dict,db:session):
             set_all_tracks(all_tracks)
             print("genreated all track",flush=True)
             
-        return {"status":"created","id":newTrack.id}
+        return {"status":"created","id":newTrack.id,"name":tag.get("filename")}
     
-def alltracks():
+def all_tracks_from_cache():
     data= get_all_tracks()
     if data is not None:
         data=data.get("data")
@@ -80,7 +80,6 @@ async def startup_clean():
     Base.metadata.create_all(bind=engine)
     
 # IMPORTANT: The path to 'static' is now relative to the root execution directory (DJ Mixer)
-# Use "static" because it is a sibling to the "backend" folder when running from the root.
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/tracks",StaticFiles(directory="tracks"),name="tracks")
 
@@ -113,7 +112,7 @@ async def uploadTrack(file:UploadFile=File(...),genre:str=Form(...),db:session=D
         "filename": audioName,
         "file_path": file_path,
         "title": audioName,
-        "genre": fileInfo.get('TCON', [''])[0],
+        "genre": fileInfo.get('TCON', [''])[0] or genre,
         "duration_sec": fileInfo.info.length,
     }
     if not tags["title"] and not tags["filename"]:
@@ -124,11 +123,7 @@ async def uploadTrack(file:UploadFile=File(...),genre:str=Form(...),db:session=D
 
     # print("file info ",tags,flush=True)
 
-    if not tags["title"]:
-        tags["title"]=tags["filename"]
-
     result=save_track_to_db(tags,db)
-    # trackList- make fxn() later to retreive all tracks and send 
 
     return result
 
@@ -142,18 +137,32 @@ def save_playlist_to_db(user_prompt:str,playlist,db:session):
     print("pllst",new_playlist,flush=True)
     return "ok"
 
+def top_track_from_db(db:session):
+    top_tracks_orm = db.query(Track).order_by(Track.mix_count.desc()).limit(10).all()
+    if not top_tracks_orm:
+        set_top_tracks([])
+        return []
+
+    print("got top tracks from db ",flush=True)
+
+    tracks_in_list=[track.to_dict() for track in top_tracks_orm]
+    return tracks_in_list
+
 def increment_used(id:int,db:session):
     track=db.query(Track).get(id)
     if track is None:
         raise HTTPException(status_code=404,detail=f"Track with ID {id} not found.")
     try:
-        track.used+=1
+        track.mix_count+=1
         db.commit()
         db.refresh(track)
+        tracks_in_list=top_track_from_db(db)
+        set_top_tracks(tracks_in_list)
+        
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500,detail=f"Database error during increment: {e}")
-    return {"id":id,"used_count":track.used}
+    return {"id":id,"used_count":track.mix_count}
 
 class UserPromptRequest(BaseModel):
     user_prompt:str
@@ -161,7 +170,7 @@ class UserPromptRequest(BaseModel):
 @app.post("/api/playlist/generate")
 async def generate(prompt:UserPromptRequest,db:session=Depends(get_db)):    
     # print("promt",prompt,flush=True)
-    all_tracks=alltracks()
+    all_tracks=all_tracks_from_cache()
     # print("type -> ",type(all_tracks),flush=True)
     if not all_tracks:
         all_tracks=get_all_tracks_from_db(db)
@@ -189,7 +198,7 @@ async def generate(prompt:UserPromptRequest,db:session=Depends(get_db)):
         response=client.models.generate_content(
             model="gemini-2.0-flash", contents=[system_instruction,user_content],
             config={
-                    "response_mime_type": "application/json", # Use JSON mode for structured output
+                    "response_mime_type": "application/json", #JSON mode for structured output
                     "response_schema": {
                     "type": "object",
                     "properties": {
@@ -231,9 +240,35 @@ async def generate(prompt:UserPromptRequest,db:session=Depends(get_db)):
 
 
 
-@app.get("/alltracks")
+@app.get("/api/tracks", response_model=list) # Create a Pydantic model for the list items later
+def get_all_tracks_api(db: session = Depends(get_db)):
+    return get_all_tracks_from_db(db)
+
+
+
+
+@app.get("/status/top-tracks")
+def top_tracks(db:session=Depends(get_db)):
+    tracks=get_top_tracks()
+    if tracks is not None:
+        print("got top tracks from cache ",flush=True)
+        return tracks
+    top_tracks_orm = db.query(Track).order_by(Track.mix_count.desc()).limit(10).all()
+    if not top_tracks_orm:
+        set_top_tracks([])
+        return []
+
+    print("got top tracks from db ",flush=True)
+
+    tracks_in_list=top_track_from_db(db)
+    set_top_tracks(tracks_in_list)
+
+    return tracks_in_list
+
+# just to check for DEV
+@app.get("/all_tracks_from_cache")
 def gettracks():
-    return alltracks()
+    return all_tracks_from_cache()
 
 @app.get("/getcache")
 def getcache():
@@ -242,30 +277,8 @@ def getcache():
     data=data.get("ALL_TRACKS")
     return data
 
-@app.get("/status/top-tracks")
-def top_tracks(db:session=Depends(get_db)):
-    tracks=get_top_tracks()
-    if tracks is not None:
-        return tracks
-    top_tracks_orm = db.query(Track).order_by(Track.used.desc()).limit(10).all()
-    if not top_tracks_orm:
-        set_top_tracks([])
-        return []
-
-    tracks_in_list=[track.to_dict() for track in top_tracks_orm]
-    set_top_tracks(tracks_in_list)
-
-    return tracks_in_list
-
-
 @app.get("/used")
 def used(db:session=Depends(get_db)):
     results=db.query(Track).all()
     used_list=[item.get_used() for item in results]
     return used_list
-
-@app.get("/api/tracks", response_model=list) # Create a Pydantic model for the list items later
-def get_all_tracks_api(db: session = Depends(get_db)):
-    """Returns the full list of tracks for frontend lookup."""
-    # This calls your existing function that returns dictionaries
-    return get_all_tracks_from_db(db)

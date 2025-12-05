@@ -79,7 +79,7 @@ async function uploadFiles() {
         return;
     }
 
-    uploadStatus.innerText = "Uploading...";
+    // uploadStatus.innerText = "Uploading...";
 
     for (const file of files) {
         const formdata = new FormData();
@@ -94,7 +94,7 @@ async function uploadFiles() {
             if (response.ok) {
                 const result = await response.json();
                 console.log("Upload Success:", result);
-                uploadStatus.innerText = `Uploaded ${result.status}.`;
+                uploadStatus.innerText += `Uploaded ${result.name}.\n`;
                 await fetchAllTracks();
             } else {
                 const errorText = await response.json();
