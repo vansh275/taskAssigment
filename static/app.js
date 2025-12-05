@@ -194,7 +194,7 @@ async function getTopTracks() {
     topTracksList.innerHTML = '<li>Fetching top tracks...</li>';
 
     try {
-        const response = await fetch("/status/top-tracks");
+        const response = await fetch("/stats/top-tracks");
         const result = await response.json();
 
         if (response.ok) {

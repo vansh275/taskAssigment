@@ -158,7 +158,7 @@ def increment_used(id:int,db:session):
         db.refresh(track)
         tracks_in_list=top_track_from_db(db)
         set_top_tracks(tracks_in_list)
-        
+
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500,detail=f"Database error during increment: {e}")
@@ -247,7 +247,7 @@ def get_all_tracks_api(db: session = Depends(get_db)):
 
 
 
-@app.get("/status/top-tracks")
+@app.get("/stats/top-tracks")
 def top_tracks(db:session=Depends(get_db)):
     tracks=get_top_tracks()
     if tracks is not None:
