@@ -44,6 +44,8 @@ function playNextTrackInSequence() {
 
     if (currentTrackIndex >= currentMixSequence.length) {
         statusDiv.innerText = 'Playlist finished.';
+        audioPlayer.onended = null;
+        audioPlayer.onerror = null;
         audioPlayer.src = '';
         return;
     }
@@ -57,7 +59,7 @@ function playNextTrackInSequence() {
     const filename = track.file_path.split(/[/\\]/).pop();
 
     // Construct the URL using the static mount point "/tracks/"
-    audioPlayer.src = `/tracks/${filename}`;
+    audioPlayer.src = `/tracks/${encodeURIComponent(filename)}`;
 
     audioPlayer.play().catch(e => {
         console.error("Autoplay prevented:", e);
@@ -169,6 +171,7 @@ async function generateMix() {
             });
 
             if (sequencedTracks.length > 0) {
+                // console.log(sequencedTracks);
                 startSequentialPlayback(sequencedTracks);
             } else {
                 statusDiv.innerText = "Error: AI returned an empty playlist or all selected IDs were invalid.";
