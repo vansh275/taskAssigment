@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mood DJ Intern Assignment</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎧 Arvyax Mood DJ</h1>
+
+        <section class="card">
+            <h2>1. Upload Music (.mp3/.wav)</h2>
+            <input type="file" id="musicFile" accept="audio/mp3, audio/wav" multiple>
+            <button onclick="uploadFiles()">Upload Tracks</button>
+            <div>
+                <input type="text" id="songGenre" placeholder="Genre">
+            </div>
+            <div id="uploadStatus"></div>
+        </section>
+
+        <section class="card">
+            <h2>2. Generate & Play Mix</h2>
+
+            <input type="text" id="moodPrompt" placeholder="e.g., calm focus, romantic evening">
+
+            <button onclick="generateMix()">Generate Mix & Play</button>
+
+            <div id="mixStatus"></div>
+
+            <div id="playlistTrackList" style="margin-top: 10px;">
+                <p class="placeholder-text">Playlist text will load here.</p>
+            </div>
+
+            <div id="playbackControls" style="margin-top: 15px;">
+                <audio id="audioPlayer" controls style="width: 100%;"></audio>
+            </div>
+
+        </section>
+
+        <section class="card">
+            <h2>3. Top Tracks (Cached Endpoint)</h2>
+            <button onclick="getTopTracks()">Show Top Tracks</button>
+            <ul id="topTracksList">
+            </ul>
+        </section>
+
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+
+</html>
