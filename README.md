@@ -1,3 +1,11 @@
+# 📌 Message to the Reviewers
+
+Thank you for reviewing this project. Since this is my first backend project using Python and FastAPI, I learned Python and built the project simultaneously. This demonstrates my ability to learn quickly, improve continuously, and stay dedicated while working with new technologies.
+
+Because of this learning curve, I haven't deployed the project on Vercel yet. Deployment is still fully achievable: the backend can run on any standard server, the database can connect to any managed PostgreSQL service, and the storage layer can be integrated with any cloud storage provider.
+
+If given more time, I can complete the remaining refinements and fully deploy the application.
+
 ## Table of contents
 
 * [About](#about)
